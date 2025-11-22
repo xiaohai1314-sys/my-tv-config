@@ -176,91 +176,91 @@
       "api": "https://api.xinlangapi.com/xinlangapi.php/provide/vod/"
     },
     {
-      "name": "4kvm🎥",
+      "name": "4kvm📀",
       "type": 3,
       "api": "csp_4kvm",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/4kvm.js"
     },
     {
-      "name": "LIBVIO🎥",
+      "name": "LIBVIO📀",
       "type": 3,
       "api": "csp_LIBVIO",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/LIBVIO.js"
     },
     {
-      "name": "两个BT🎥",
+      "name": "两个BT📀",
       "type": 3,
       "api": "csp_两个BT",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/两个BT.js",
     },
     {
-      "name": "在线之家🎥",
+      "name": "在线之家📀",
       "type": 3,
       "api": "csp_在线之家",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/在线之家.js",
     },
     {
-      "name": "小红影视🎥",
+      "name": "小红影视📀",
       "type": 3,
       "api": "csp_小红影视",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/小红影视.js",
     },
     {
-      "name": "影视天堂🎥",
+      "name": "影视天堂📀",
       "type": 3,
       "api": "csp_影视天堂",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/影视天堂.js"
     },
     {
-      "name": "独播库🎥",
+      "name": "独播库📀",
       "type": 3,
       "api": "csp_独播库",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/独播库.js",
     },
     {
-      "name": "youknow🎥",
+      "name": "youknow📀",
       "type": 3,
       "api": "csp_youknow",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/youknow.js",
     },
     {
-      "name": "飞快TV🎥",
+      "name": "飞快TV📀",
       "type": 3,
       "api": "csp_飞快TV",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/飞快TV.js",
     },
     {
-      "name": "骚火影视🎥",
+      "name": "骚火影视📀",
       "type": 3,
       "api": "csp_骚火影视",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/骚火影视.js"
     },
     {
-      "name": "苹果影视🎥",
+      "name": "苹果影视📀",
       "type": 3,
       "api": "csp_苹果影视",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/苹果影视.js"
     },
     {
-      "name": "金牌影视🎥",
+      "name": "金牌影视📀",
       "type": 3,
       "api": "csp_金牌影视",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/金牌影视.js"
     },
     {
-      "name": "NO视频🎥",
+      "name": "NO视频📀",
       "type": 3,
       "api": "csp_NO视频",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/NO视频.js"
     },
     {
-      "name": "荐片🎥",
+      "name": "荐片📀",
       "type": 3,
       "api": "csp_荐片",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/荐片.js"
     },
     {
-      "name": "瓜子影视🎥",
+      "name": "瓜子影视📀",
       "type": 3,
       "api": "csp_瓜子影视",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/瓜子影视.js"
