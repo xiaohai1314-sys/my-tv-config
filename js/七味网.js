@@ -111,7 +111,8 @@ async function getTracks(ext) {
                     let cleanedTitle = originalTitle;
                     // 1. 移除文件名中常见的非规格括号信息，如 (《...》【...】提...)
                     // 匹配并移除 (《...》【...】提...) 这种格式
-                    cleanedTitle = cleanedTitle.replace(/\(《[^》]+》【[^】]+】提\.\.\.\)/, '').trim();
+                    // 清理所有形如 (《xxx》【yyy】提取码...) 结构
+                    cleanedTitle = cleanedTitle.replace(/\(《[^》]+》【[^）]+】[^)]*\)/g, '').trim();
                     // 2. 移除末尾的 [115] 或其他网盘标识
                     cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
                     
