@@ -11,6 +11,7 @@
  * 
  * 【✅ 优化】
  * - 确保链接清理逻辑仅应用于包含 "115" 关键字的链接。
+ * - 优化网盘命名逻辑，去除原始文件名中不必要的括号信息。
  */
 
 // ================== 🔴 配置区 🔴 ==================
@@ -51,7 +52,8 @@ async function getCards(ext) {
     const pagePath = page === 1 ? ext.id : ext.id.replace('.html', `-${page}.html`);
     const url = `${appConfig.site}${pagePath}`;
     try {
-        const { data: html } = await fetchOriginalSite(url);
+        const fetchResult = await fetchOriginalSite(url);
+        const html = fetchResult.data;
         const $ = cheerio.load(html);
         const cards = [];
         $('ul.content-list > li').each((_, element) => {
@@ -75,7 +77,8 @@ async function getTracks(ext) {
     ext = argsify(ext);
     const url = `${appConfig.site}${ext.url}`;
     try {
-        const { data: html } = await fetchOriginalSite(url);
+        const fetchResult = await fetchOriginalSite(url);
+        const html = fetchResult.data;
         const $ = cheerio.load(html);
         const vod_name = $('div.main-ui-meta h1').text().replace(/\(\d+\)$/, '').trim();
         const tracks = [];
@@ -104,10 +107,27 @@ async function getTracks(ext) {
                     }
                     // --- 【清理逻辑结束】 ---
 
+                    // --- 【⭐ 优化命名逻辑】 ---
+                    let cleanedTitle = originalTitle;
+                    // 1. 移除文件名中常见的非规格括号信息，如 (《...》【...】提...)
+                    // 匹配并移除 (《...》【...】提...) 这种格式
+                    cleanedTitle = cleanedTitle.replace(/\(《[^》]+》【[^】]+】提\.\.\.\)/, '').trim();
+                    // 2. 移除末尾的 [115] 或其他网盘标识
+                    cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
+                    
                     let spec = '';
-                    const specMatch = originalTitle.match(/(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|[\d\.]+G[B]?)/ig);
-                    if (specMatch) spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
-                    const trackName = spec ? `${vod_name} (${spec})` : `${vod_name} (${originalTitle.substring(0, 25)}...)`;
+                    // 3. 使用清理后的文件名进行规格匹配
+                    const specMatch = cleanedTitle.match(/(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|[\d\.]+G[B]?)/ig);
+                    if (specMatch) {
+                        spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
+                    }
+                    
+                    // 4. 构造最终名称
+                    const trackName = spec 
+                        ? `${vod_name} [${spec}]` 
+                        : `${vod_name} (${cleanedTitle.substring(0, 25)}...)`;
+                    // --- 【命名逻辑结束】 ---
+                    
                     let pwd = '';
                     const pwdMatch = linkUrl.match(/pwd=(\w+)/) || originalTitle.match(/(?:提取码|访问码)[：: ]\s*(\w+)/i);
                     if (pwdMatch) pwd = pwdMatch[1];
@@ -168,7 +188,8 @@ async function getPlayinfo(ext) {
     // 新增：在线播放逻辑
     const playPageUrl = `${appConfig.site}${ext.pan}`;
     try {
-        const { data: html } = await fetchOriginalSite(playPageUrl);
+        const fetchResult = await fetchOriginalSite(playPageUrl);
+        const html = fetchResult.data;
         const $ = cheerio.load(html);
         let playUrl = $('iframe').attr('src') || $('video source').attr('src') || $('video').attr('src');
         if (!playUrl) playUrl = playPageUrl;
