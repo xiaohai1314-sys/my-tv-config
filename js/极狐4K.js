@@ -135,16 +135,18 @@ async function getTracks(ext) {
             const originalTitle = linkElement.find('em.filename').text().trim();
             
             if (finalPanUrl && originalTitle) {
-                // --- 【⭐ 新增的链接清理逻辑】 ---
                 let cleanedUrl = finalPanUrl;
                 
-                // 第一步：将 115cdn.com 转换成 115.com
-                cleanedUrl = cleanedUrl.replace('115cdn.com', '115.com');
-                
-                // 第二步：移除尾部所有非字母和非数字的特殊符号
-                // 正则表达式 /[^a-zA-Z0-9]+$/ 匹配链接末尾连续的非字母数字字符
-                cleanedUrl = cleanedUrl.replace(/[^a-zA-Z0-9]+$/, '');
+                // --- 【⭐ 115网盘专属链接清理逻辑】 ---
+                if (cleanedUrl.includes('115')) {
+                    // 第一步：将 115cdn.com 转换成 115.com
+                    cleanedUrl = cleanedUrl.replace('115cdn.com', '115.com');
+                    
+                    // 第二步：移除尾部所有非字母和非数字的特殊符号
+                    cleanedUrl = cleanedUrl.replace(/[^a-zA-Z0-9]+$/, '');
+                }
                 // --- 【清理逻辑结束】 ---
+
 
                 // --- 【✅ 完全保留】您强大的自定义命名逻辑 ---
                 let newName = originalTitle;
