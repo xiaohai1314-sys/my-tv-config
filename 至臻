@@ -135,7 +135,7 @@ async function getTracks(ext) {
     return jsonify({
         // list 返回一個數組，用於區分不同線路(參考 AGE 動漫及 girigiri 動漫)，但功能未實現目前只會讀取第一項
         list: [
-            {zi
+            {
                 title: '默认分组',
                 tracks,
             },
