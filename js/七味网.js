@@ -1,10 +1,17 @@
 /**
- * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.4 (极致精简命名版)
+ * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.3 (前端分页优化版)
  *
- * 基于 v11.3 修改：
- * - 命名逻辑重构：严格遵循“帖子名 + [关键词]”格式。如果没有关键词，直接使用“帖子名”，不再保留任何文件名后缀。
- * - 修复：保留了针对长串乱码的正则修复，确保能正确提取出隐藏的关键词。
- * - 包含：前端搜索缓存、115域名统一、分页优化等所有功能。
+ * 基于 v11.30 修改：
+ * - 将搜索分页逻辑和缓存控制从后端迁移到前端，参考海绵小站插件设计。
+ * - 新增前端 searchCache，减少对后端的重复请求，显著降低后端压力。
+ * 
+ * 【⭐ 新增功能】
+ * - 统一 115 域名：将 115cdn.com 转换为 115.com。
+ * - 清理尾部特殊符号：移除链接末尾所有非字母数字的特殊符号。
+ * 
+ * 【✅ 优化】
+ * - 确保链接清理逻辑仅应用于包含 "115" 关键字的链接。
+ * - 优化网盘命名逻辑为最简化模式：帖子名 + 规格关键词（如果有），否则仅帖子名。
  */
 
 // ================== 🔴 配置区 🔴 ==================
@@ -14,7 +21,7 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 const BACKEND_API_URL = 'http://192.168.1.3:3002/get-search-html'; // ★ 请修改为您的后端IP
 
 const appConfig = {
-    ver: 11.4,
+    ver: 11.0, // 版本号保持与原始一致
     title: '七味网(纯盘   )',
     site: 'https://www.qnmp4.com',
     tabs: [
@@ -26,7 +33,7 @@ const appConfig = {
 };
 
 // ================== 辅助函数 ==================
-function log(msg  ) { try { $log(`[七味网 v11.4] ${msg}`); } catch (_) { console.log(`[七味网 v11.4] ${msg}`); } }
+function log(msg  ) { try { $log(`[七味网 v11.0] ${msg}`); } catch (_) { console.log(`[七味网 v11.0] ${msg}`); } }
 function argsify(ext) { if (typeof ext === 'string') { try { return JSON.parse(ext); } catch (e) { return {}; } } return ext || {}; }
 function jsonify(data) { return JSON.stringify(data); }
 async function fetchOriginalSite(url) {
@@ -76,7 +83,7 @@ async function getTracks(ext) {
         const vod_name = $('div.main-ui-meta h1').text().replace(/\(\d+\)$/, '').trim();
         const tracks = [];
 
-        // ========= ① 网盘下载逻辑 =========
+        // ========= ① 网盘下载逻辑（已修改，新增链接清理） =========
         const panDownloadArea = $('h2:contains("网盘下载")').parent();
         if (panDownloadArea.length > 0) {
             const panTypes = [];
@@ -91,47 +98,52 @@ async function getTracks(ext) {
                     
                     let linkUrl = originalLinkUrl;
 
-                    // --- 115网盘链接清理 ---
+                    // --- 【⭐ 115网盘专属链接清理逻辑】 ---
                     if (linkUrl && linkUrl.includes('115')) {
+                        // 第一步：将 115cdn.com 转换成 115.com
                         linkUrl = linkUrl.replace('115cdn.com', '115.com');
+                        // 第二步：移除尾部所有非字母和非数字的特殊符号
                         linkUrl = linkUrl.replace(/[^a-zA-Z0-9]+$/, '');
                     }
+                    // --- 【清理逻辑结束】 ---
 
-                    // --- ⭐ 核心修复：名称清理与提取 ---
+                    // --- 【⭐ 简化命名逻辑】 ---
+                    // 1. 移除文件名中常见的非规格括号信息，例如 (《...》【...】提...)
                     let cleanedTitle = originalTitle;
-                    
-                    // 1. 万能正则：虽然我们不展示文件名了，但必须先删掉乱码，才能提取到后面的关键词
-                    cleanedTitle = cleanedTitle.replace(/\(《[^》]+》\s*【[^】]+】.*?\)/, '').trim();
+                    cleanedTitle = cleanedTitle.replace(/\(《[^》]+》【[^】]+】提\.\.\.\)/, '').trim();
+                    // 2. 移除末尾的 [115] 或其他网盘标识
                     cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
                     
-                    // 2. 提取规格关键词
                     let spec = '';
+                    // 3. 使用清理后的文件名进行规格匹配
                     const specMatch = cleanedTitle.match(/(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|[\d\.]+G[B]?)/ig);
                     if (specMatch) {
                         spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
                     }
                     
-                    // 3. 最终命名逻辑 (严格版)
-                    // 规则：有关键词就加关键词，没关键词就只用帖子名。
-                    const trackName = spec ? `${vod_name} [${spec}]` : vod_name;
-                    // --- 逻辑结束 ---
+                    // 4. 构造最终名称：帖子名 + 规格关键词（如果有），否则仅帖子名
+                    const trackName = spec 
+                        ? `${vod_name} [${spec}]` 
+                        : vod_name; // 简化为仅帖子名
+                    // --- 【命名逻辑结束】 ---
                     
                     let pwd = '';
                     const pwdMatch = linkUrl.match(/pwd=(\w+)/) || originalTitle.match(/(?:提取码|访问码)[：: ]\s*(\w+)/i);
                     if (pwdMatch) pwd = pwdMatch[1];
                     
-                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } });
+                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } }); // 使用清理后的 linkUrl
                 });
                 if (groupTracks.length > 0) tracks.push({ title: panType, tracks: groupTracks });
             });
         }
 
-        // ========= ② 在线播放分组 =========
+        // ========= ② 修复后：在线播放分组 =========
         const onlineSection = $('#url .sBox');
         if (onlineSection.length > 0) {
+            // 获取所有播放源标签名
             const tabNames = [];
             onlineSection.find('.py-tabs li').each((_, tab) => {
-                const tabText = $(tab).text().trim().split('\n')[0];
+                const tabText = $(tab).text().trim().split('\n')[0]; // 去掉数字部分
                 tabNames.push(tabText);
             });
             
