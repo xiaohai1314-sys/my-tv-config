@@ -1,23 +1,27 @@
 /**
- * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.4（网盘命名修复版）
+ * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.3 (前端分页优化版)
  *
  * 基于 v11.3 修改：
- * - 修复网盘名称出现原始文件名中括号噪声（如红框内容）的 bug
- * - 将 (《xxx》【xxxx】提取码...) 结构完整清除
- * - 保持其它所有逻辑完全不变
- *
- * 【⭐ 新增功能（此前版本）】
- * - 统一 115 域名：115cdn.com → 115.com
- * - 清理链接末尾特殊符号
- * - 前端搜索缓存
+ * - 将搜索分页逻辑和缓存控制从后端迁移到前端，参考海绵小站插件设计。
+ * - 新增前端 searchCache，减少对后端的重复请求，显著降低后端压力。
+ * 
+ * 【⭐ 新增功能】
+ * - 统一 115 域名：将 115cdn.com 转换为 115.com。
+ * - 清理尾部特殊符号：移除链接末尾所有非字母数字的特殊符号。
+ * 
+ * 【✅ 优化】
+ * - 确保链接清理逻辑仅应用于包含 "115" 关键字的链接。
+ * - 优化网盘命名逻辑，去除原始文件名中不必要的括号信息。
  */
 
+// ================== 🔴 配置区 🔴 ==================
 const cheerio = createCheerio();
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36';
-const BACKEND_API_URL = 'http://192.168.1.3:3002/get-search-html';
+// ★★★ 请务必将这里的IP地址修改为您后端服务器的实际IP地址 ★★★
+const BACKEND_API_URL = 'http://192.168.1.3:3002/get-search-html'; // ★ 请修改为您的后端IP
 
 const appConfig = {
-    ver: 11.4, // ←←← 已升级版本号
+    ver: 11.0, // 版本号保持与原始一致
     title: '七味网(纯盘   )',
     site: 'https://www.qnmp4.com',
     tabs: [
@@ -29,7 +33,7 @@ const appConfig = {
 };
 
 // ================== 辅助函数 ==================
-function log(msg) { try { $log(`[七味网 v11.4] ${msg}`); } catch (_) { console.log(`[七味网 v11.4] ${msg}`); } }
+function log(msg  ) { try { $log(`[七味网 v11.0] ${msg}`); } catch (_) { console.log(`[七味网 v11.0] ${msg}`); } }
 function argsify(ext) { if (typeof ext === 'string') { try { return JSON.parse(ext); } catch (e) { return {}; } } return ext || {}; }
 function jsonify(data) { return JSON.stringify(data); }
 async function fetchOriginalSite(url) {
@@ -38,11 +42,10 @@ async function fetchOriginalSite(url) {
     return $fetch.get(url, { headers });
 }
 
-// ================== init / config ==================
+// ================== 核心实现 ==================
 async function init(ext) { return jsonify({}); }
 async function getConfig() { return jsonify(appConfig); }
 
-// ================== getCards ==================
 async function getCards(ext) {
     ext = argsify(ext);
     const page = ext.page || 1;
@@ -70,7 +73,6 @@ async function getCards(ext) {
     }
 }
 
-// ================== getTracks ==================
 async function getTracks(ext) {
     ext = argsify(ext);
     const url = `${appConfig.site}${ext.url}`;
@@ -81,68 +83,71 @@ async function getTracks(ext) {
         const vod_name = $('div.main-ui-meta h1').text().replace(/\(\d+\)$/, '').trim();
         const tracks = [];
 
-        // ========= ① 网盘下载 =========
+        // ========= ① 网盘下载逻辑（已修改，新增链接清理） =========
         const panDownloadArea = $('h2:contains("网盘下载")').parent();
         if (panDownloadArea.length > 0) {
             const panTypes = [];
             panDownloadArea.find('.nav-tabs .title').each((_, el) => panTypes.push($(el).text().trim()));
-
             panDownloadArea.find('.down-list.tab-content > ul.content').each((index, ul) => {
                 const panType = panTypes[index] || '未知网盘';
                 const groupTracks = [];
-
                 $(ul).find('li.down-list2').each((_, li) => {
                     const $a = $(li).find('p.down-list3 a');
                     const originalLinkUrl = $a.attr('href');
                     const originalTitle = $a.attr('title') || $a.text();
-
+                    
                     let linkUrl = originalLinkUrl;
 
-                    // --- 115 专属清理 ---
+                    // --- 【⭐ 115网盘专属链接清理逻辑】 ---
                     if (linkUrl && linkUrl.includes('115')) {
+                        // 第一步：将 115cdn.com 转换成 115.com
                         linkUrl = linkUrl.replace('115cdn.com', '115.com');
+                        // 第二步：移除尾部所有非字母和非数字的特殊符号
                         linkUrl = linkUrl.replace(/[^a-zA-Z0-9]+$/, '');
                     }
+                    // --- 【清理逻辑结束】 ---
 
-                    // --- ⭐ 命名修复（仅修改这里） ---
+                    // --- 【⭐ 优化命名逻辑】 ---
                     let cleanedTitle = originalTitle;
-
-                    // 清理类似 (《蚁龙行动》【2025_tt32515812】提取码...) 的结构
-                    cleanedTitle = cleanedTitle.replace(/\(《[^》]+》【[^）]+】[^)]*\)/g, '').trim();
-
-                    // 清理诸如 [115] 等标签
+                    // 1. 移除文件名中常见的非规格括号信息，如 (《...》【...】提...)
+                    // 匹配并移除 (《...》【...】提...) 这种格式
+                    cleanedTitle = cleanedTitle.replace(/\(《[^》]+》【[^】]+】提\.\.\.\)/, '').trim();
+                    // 2. 移除末尾的 [115] 或其他网盘标识
                     cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
-
+                    
                     let spec = '';
+                    // 3. 使用清理后的文件名进行规格匹配
                     const specMatch = cleanedTitle.match(/(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|[\d\.]+G[B]?)/ig);
                     if (specMatch) {
                         spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
                     }
-
-                    const trackName = spec
-                        ? `${vod_name} [${spec}]`
+                    
+                    // 4. 构造最终名称
+                    const trackName = spec 
+                        ? `${vod_name} [${spec}]` 
                         : `${vod_name} (${cleanedTitle.substring(0, 25)}...)`;
-
+                    // --- 【命名逻辑结束】 ---
+                    
                     let pwd = '';
                     const pwdMatch = linkUrl.match(/pwd=(\w+)/) || originalTitle.match(/(?:提取码|访问码)[：: ]\s*(\w+)/i);
                     if (pwdMatch) pwd = pwdMatch[1];
-
-                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } });
+                    
+                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } }); // 使用清理后的 linkUrl
                 });
-
                 if (groupTracks.length > 0) tracks.push({ title: panType, tracks: groupTracks });
             });
         }
 
-        // ========= ② 在线播放 =========
+        // ========= ② 修复后：在线播放分组 =========
         const onlineSection = $('#url .sBox');
         if (onlineSection.length > 0) {
+            // 获取所有播放源标签名
             const tabNames = [];
             onlineSection.find('.py-tabs li').each((_, tab) => {
-                const tabText = $(tab).text().trim().split('\n')[0];
+                const tabText = $(tab).text().trim().split('\n')[0]; // 去掉数字部分
                 tabNames.push(tabText);
             });
-
+            
             onlineSection.find('.bd ul.player').each((index, ul) => {
                 const groupTracksOnline = [];
                 $(ul).find('li a').each((_, a) => {
@@ -153,7 +158,7 @@ async function getTracks(ext) {
                         groupTracksOnline.push({ name, pan: playUrl, ext: { play: true } });
                     }
                 });
-
+                
                 if (groupTracksOnline.length > 0) {
                     const tabName = tabNames[index] || `播放源${index + 1}`;
                     tracks.push({ title: `在线播放-${tabName}`, tracks: groupTracksOnline });
@@ -168,10 +173,10 @@ async function getTracks(ext) {
     }
 }
 
-// ================== getPlayinfo ==================
 async function getPlayinfo(ext) {
     ext = argsify(ext);
 
+    // 原网盘逻辑
     if (!ext.play) {
         const panLink = ext.pan;
         const password = ext.pwd;
@@ -180,6 +185,7 @@ async function getPlayinfo(ext) {
         return jsonify({ urls: [finalUrl] });
     }
 
+    // 新增：在线播放逻辑
     const playPageUrl = `${appConfig.site}${ext.pan}`;
     try {
         const fetchResult = await fetchOriginalSite(playPageUrl);
@@ -194,8 +200,8 @@ async function getPlayinfo(ext) {
     }
 }
 
-// ================== 搜索（前端缓存版） ==================
-const searchCache = {};
+// ================== 搜索逻辑 (★ MODIFIED ★ - 移植海绵小站模式) ==================
+const searchCache = {}; // ★ NEW ★: 新增前端搜索缓存对象
 
 async function search(ext) {
     ext = argsify(ext);
@@ -203,17 +209,21 @@ async function search(ext) {
     const page = ext.page || 1;
 
     if (!keyword.trim()) {
-        log("检测到无关键词搜索，返回空列表。");
+        log("检测到无关键词的搜索调用，返回空列表。");
         return jsonify({ list: [], page: 1, pagecount: 1 });
     }
 
+    // ★ NEW ★: 切换关键词时，重置缓存
     if (searchCache.keyword !== keyword) {
+        log(`新关键词 "${keyword}"，重置缓存。`);
         searchCache.keyword = keyword;
         searchCache.data = [];
         searchCache.pagecount = 0;
     }
 
+    // ★ NEW ★: 命中页缓存，直接返回
     if (searchCache.data && searchCache.data[page - 1]) {
+        log(`命中缓存: "${keyword}" 第 ${page} 页。`);
         return jsonify({
             list: searchCache.data[page - 1],
             page: page,
@@ -221,33 +231,38 @@ async function search(ext) {
         });
     }
 
+    // ★ NEW ★: 页码越界保护，防止无效的后端请求
     if (searchCache.pagecount > 0 && page > searchCache.pagecount) {
+        log(`请求页码 ${page} 超出总页数 ${searchCache.pagecount}，返回空列表。`);
         return jsonify({ list: [], page: page, pagecount: searchCache.pagecount });
     }
 
+    log(`缓存未命中，开始请求后端: "${keyword}", 页码: ${page}`);
     const encodedKeyword = encodeURIComponent(keyword);
     const targetSearchUrl = `${appConfig.site}/vs/${encodedKeyword}----------${page}---.html`;
 
     try {
-        const response = await $fetch.post(
-            BACKEND_API_URL,
+        const response = await $fetch.post(BACKEND_API_URL, 
             { search_url: targetSearchUrl, requested_page: page },
             { headers: { 'Content-Type': 'application/json' } }
         );
 
         let resultData;
         try { resultData = JSON.parse(response.data); }
-        catch (_) { resultData = response.data; }
+        catch (parseError) {
+            log(`JSON.parse 失败，直接使用 response.data: ${parseError.message}`);
+            resultData = response.data;
+        }
 
-        if (!resultData || !resultData.html || !resultData.paginationInfo) {
-            if (resultData && resultData.error) throw new Error(resultData.error);
-            throw new Error("后端返回异常格式。");
+        if (!resultData || typeof resultData !== 'object' || !resultData.html || !resultData.paginationInfo) {
+            if (resultData && resultData.error) throw new Error(`后端返回错误: ${resultData.error}`);
+            throw new Error("前端收到的数据格式不正确或缺少关键字段。");
         }
 
         const html = resultData.html;
         const paginationInfo = resultData.paginationInfo;
-        const $ = cheerio.load(html);
 
+        const $ = cheerio.load(html);
         const cards = [];
         $('div.sr_lists dl').each((_, element) => {
             const $dl = $(element);
@@ -259,20 +274,28 @@ async function search(ext) {
                 cards.push({ vod_id, vod_name, vod_pic, vod_remarks, ext: { url: vod_id } });
             }
         });
+        
+        log(`成功从后端获取并解析到 ${cards.length} 条数据。`);
 
-        searchCache.data[page - 1] = cards;
+        // ★ NEW ★: 更新缓存
+        if (!searchCache.data) searchCache.data = [];
+        searchCache.data[page - 1] = cards; // 缓存当前页数据
         if (paginationInfo.totalPages > 0) {
-            searchCache.pagecount = paginationInfo.totalPages;
+            searchCache.pagecount = paginationInfo.totalPages; // 更新总页数
         }
+        
+        log(`缓存更新: "${keyword}" 第 ${page} 页数据已存入。当前已知总页数: ${searchCache.pagecount}`);
 
         return jsonify({
             list: cards,
             page: page,
-            pagecount: searchCache.pagecount
+            pagecount: searchCache.pagecount // ★ MODIFIED ★: 使用缓存中的总页数
         });
 
     } catch (e) {
         log(`❌ 搜索异常: ${e.message}`);
+        $toast(`搜索失败: ${e.message}`);
+        // ★ MODIFIED ★: 失败时也返回正确的缓存页数，防止UI错乱
         return jsonify({ list: [], page: page, pagecount: searchCache.pagecount || page });
     }
 }
