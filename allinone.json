@@ -266,133 +266,133 @@
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/瓜子影视.js"
     },
     {
-      "name": "4K热播",
+      "name": "4K热播|pan",
       "type": 3,
       "api": "csp_4K热播",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/4K热播.js"
     },
     {
-      "name": "nullbr",
+      "name": "nullbr|pan",
       "type": 3,
       "api": "csp_nullbr",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/nullbr.js"
     },
     {
-      "name": "seedhub",
+      "name": "seedhub|pan",
       "type": 3,
       "api": "csp_seedhub",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/seedhub.js"
     },
     {
-      "name": "七味网",
+      "name": "七味网|pan",
       "type": 3,
       "api": "csp_七味网",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/七味网.js"
     },
     {
-      "name": "云盘资源网",
+      "name": "云盘资源网|pan",
       "type": 3,
       "api": "csp_云盘资源网",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/云盘资源网.js"
     },
     {
-      "name": "剧透社",
+      "name": "剧透社|pan",
       "type": 3,
       "api": "csp_剧透社",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/剧透社.js"
     },
     {
-      "name": "多多影音",
+      "name": "多多影音|pan",
       "type": 3,
       "api": "csp_多多影音",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/多多影音.js"
     },
     {
-      "name": "夸父资源社",
+      "name": "夸父资源社|pan",
       "type": 3,
       "api": "csp_夸父资源社",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/夸父资源社.js"
     },
     {
-      "name": "找盘",
+      "name": "找盘|pan",
       "type": 3,
       "api": "csp_hdmoli",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/找盘.js"
     },
     {
-      "name": "木偶",
+      "name": "木偶|pan",
       "type": 3,
       "api": "csp_木偶",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/木偶.js"
     },
     {
-      "name": "极狐4K",
+      "name": "极狐4K|pan",
       "type": 3,
       "api": "csp_极狐4K",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/极狐4K.js"
     },
     {
-      "name": "欧歌",
+      "name": "欧歌|pan",
       "type": 3,
       "api": "csp_欧歌",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/欧歌.js"
     },
     {
-      "name": "海绵",
+      "name": "海绵|pan",
       "type": 3,
       "api": "csp_海绵",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/海绵.js"
     },
     {
-      "name": "玩偶",
+      "name": "玩偶|pan",
       "type": 3,
       "api": "csp_玩偶",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/玩偶.js"
     },
     {
-      "name": "至臻",
+      "name": "至臻|pan",
       "type": 3,
       "api": "csp_至臻",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/至臻.js"
     },
     {
-      "name": "虎斑",
+      "name": "虎斑|pan",
       "type": 3,
       "api": "csp_虎斑",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/虎斑.js"
     },
     {
-      "name": "蜡笔盘",
+      "name": "蜡笔盘|pan",
       "type": 3,
       "api": "csp_蜡笔盘",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/蜡笔盘.js"
     },
     {
-      "name": "观影",
+      "name": "观影|pan",
       "type": 3,
       "api": "csp_观影",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/观影.js"
     },
     {
-      "name": "资源避难所",
+      "name": "资源避难所|pan",
       "type": 3,
       "api": "csp_资源避难所",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/资源避难所.js"
     },
     {
-      "name": "趣乐兔",
+      "name": "趣乐兔|pan",
       "type": 3,
       "api": "csp_趣乐兔r",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/趣乐兔.js"
     },
     {
-      "name": "雷鲸",
+      "name": "雷鲸|pan",
       "type": 3,
       "api": "csp_雷鲸",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/雷鲸.js"
     },
     {
-      "name": "tg搜索",
+      "name": "tg搜索|pan",
       "type": 3,
       "api": "csp_tg搜索",
       "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/tg搜索.js"
