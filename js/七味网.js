@@ -1,10 +1,10 @@
 /**
- * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.3 (正则修复完整版)
+ * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.4 (极致精简命名版)
  *
  * 基于 v11.3 修改：
- * - 修复：优化网盘链接名称清理正则，解决因空格或特殊结尾导致的匹配失败（去除长串乱码）。
- * - 优化：当没有分辨率关键词且文件名被清理为空时，直接使用帖子标题，不显示空括号。
- * - 包含：前端搜索缓存优化、115域名统一、分页优化等所有前序功能。
+ * - 命名逻辑重构：严格遵循“帖子名 + [关键词]”格式。如果没有关键词，直接使用“帖子名”，不再保留任何文件名后缀。
+ * - 修复：保留了针对长串乱码的正则修复，确保能正确提取出隐藏的关键词。
+ * - 包含：前端搜索缓存、115域名统一、分页优化等所有功能。
  */
 
 // ================== 🔴 配置区 🔴 ==================
@@ -14,7 +14,7 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 const BACKEND_API_URL = 'http://192.168.1.3:3002/get-search-html'; // ★ 请修改为您的后端IP
 
 const appConfig = {
-    ver: 11.0, // 版本号保持与原始一致
+    ver: 11.4,
     title: '七味网(纯盘   )',
     site: 'https://www.qnmp4.com',
     tabs: [
@@ -26,7 +26,7 @@ const appConfig = {
 };
 
 // ================== 辅助函数 ==================
-function log(msg  ) { try { $log(`[七味网 v11.0] ${msg}`); } catch (_) { console.log(`[七味网 v11.0] ${msg}`); } }
+function log(msg  ) { try { $log(`[七味网 v11.4] ${msg}`); } catch (_) { console.log(`[七味网 v11.4] ${msg}`); } }
 function argsify(ext) { if (typeof ext === 'string') { try { return JSON.parse(ext); } catch (e) { return {}; } } return ext || {}; }
 function jsonify(data) { return JSON.stringify(data); }
 async function fetchOriginalSite(url) {
@@ -97,36 +97,23 @@ async function getTracks(ext) {
                         linkUrl = linkUrl.replace(/[^a-zA-Z0-9]+$/, '');
                     }
 
-                    // --- ⭐ 核心修复：名称清理与生成逻辑 ---
+                    // --- ⭐ 核心修复：名称清理与提取 ---
                     let cleanedTitle = originalTitle;
                     
-                    // 1. 万能正则：彻底删除 (《...》【...】...) 及其后续所有内容
-                    // 匹配逻辑：(《...》 + 可能存在的空格 + 【...】 + 任意字符直到闭合括号)
+                    // 1. 万能正则：虽然我们不展示文件名了，但必须先删掉乱码，才能提取到后面的关键词
                     cleanedTitle = cleanedTitle.replace(/\(《[^》]+》\s*【[^】]+】.*?\)/, '').trim();
-                    
-                    // 2. 移除末尾的 [115] 等标签
                     cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
                     
-                    // 3. 提取规格关键词
+                    // 2. 提取规格关键词
                     let spec = '';
                     const specMatch = cleanedTitle.match(/(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|[\d\.]+G[B]?)/ig);
                     if (specMatch) {
                         spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
                     }
                     
-                    // 4. 最终命名逻辑（优化版）
-                    let trackName;
-                    if (spec) {
-                        // 情况A：有关键词 -> 帖子名 [关键词]
-                        trackName = `${vod_name} [${spec}]`;
-                    } else if (cleanedTitle && cleanedTitle !== vod_name) {
-                        // 情况B：无关键词，但有剩余有效文件名 -> 帖子名 (文件名)
-                        trackName = `${vod_name} (${cleanedTitle.substring(0, 25)})`;
-                    } else {
-                        // 情况C：无关键词，且文件名已被删空（或与帖子名重复） -> 仅显示帖子名
-                        // ★ 这就是你要的效果：如果红框内容删完了，直接显示片名
-                        trackName = vod_name;
-                    }
+                    // 3. 最终命名逻辑 (严格版)
+                    // 规则：有关键词就加关键词，没关键词就只用帖子名。
+                    const trackName = spec ? `${vod_name} [${spec}]` : vod_name;
                     // --- 逻辑结束 ---
                     
                     let pwd = '';
