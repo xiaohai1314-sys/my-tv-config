@@ -176,56 +176,52 @@
       "api": "https://api.xinlangapi.com/xinlangapi.php/provide/vod/"
     },
     {
-      "name": "4K热播",
+      "name": "4kvm",
       "type": 3,
-      "api": "csp_4K热播",
-      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/4K热播.js"
-    },
-    {
-      "name": "哔滴影视",
-      "type": 3,
-      "api": "csp_bde4",
-      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/XPTV/refs/heads/main/js/czzy.js"
-    },
-    {
-      "name": "欧乐🪜",
-      "type": 3,
-      "api": "csp_Olevod",
-      "ext": "https://ghp.xptvhelper.link/https://raw.githubusercontent.com/fangkuia/XPTV/refs/heads/main/js/ole.js",
-      "ext2": "https://ghp.xptvhelper.link/https://gist.githubusercontent.com/occupy-pluto/ce9bf8248a15acb87e6b55e382fb8e4b/raw/ole.js"
-    },
-    {
-      "name": "在线之家",
-      "type": 3,
-      "api": "csp_Zxzj",
-      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/XPTV/refs/heads/main/js/zxzj.js",
-      "ext2": "https://raw.githubusercontent.com/xiaohai1314-sys/XPTV/refs/heads/main/js/zxzj.js"
+      "api": "csp_4kvm",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/4kvm.js"
     },
     {
       "name": "LIBVIO",
       "type": 3,
-      "api": "csp_libvio",
-      "ext": "https://ghp.xptvhelper.link/https://raw.githubusercontent.com/fangkuia/XPTV/refs/heads/main/js/libvio.js",
-      "ext2": "https://ghp.xptvhelper.link/https://gist.githubusercontent.com/occupy-pluto/67cc3a53a26c631e32ed2f37e19e479d/raw/libvio.js"
+      "api": "csp_LIBVIO",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/LIBVIO.js"
     },
     {
-      "name": "低端影视",
+      "name": "两个BT",
       "type": 3,
-      "api": "csp_ddys",
-      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/XPTV/refs/heads/main/js/ddys.js"
+      "api": "csp_两个BT",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/两个BT.js",
     },
     {
-      "name": "ギリギリ动漫",
+      "name": "在线之家",
       "type": 3,
-      "api": "csp_ai",
-      "ext": "https://ghp.xptvhelper.link/https://raw.githubusercontent.com/fangkuia/XPTV/refs/heads/main/js/ai.js",
-      "ext2": "https://ghp.xptvhelper.link/https://gist.githubusercontent.com/occupy-pluto/5185fa59944d5b8af625b2c83604d397/raw/girl.js"
+      "api": "csp_在线之家",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/在线之家.js",
+    },
+    {
+      "name": "小红影视",
+      "type": 3,
+      "api": "csp_小红影视",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/小红影视.js",
+    },
+    {
+      "name": "影视天堂",
+      "type": 3,
+      "api": "csp_影视天堂",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/影视天堂.js"
     },
     {
       "name": "独播库",
       "type": 3,
-      "api": "csp_duboku",
-      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/XPTV/refs/heads/main/js/duboku.js",
+      "api": "csp_独播库",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/独播库.js",
+    },
+    {
+      "name": "youknow",
+      "type": 3,
+      "api": "csp_youknow",
+      "ext": "https://raw.githubusercontent.com/xiaohai1314-sys/my-tv-config/refs/heads/main/js/youknow.js",
     },
     {
       "name": "AGE动漫",
