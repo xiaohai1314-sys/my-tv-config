@@ -4,6 +4,13 @@
  * 基于 v11.3 修改：
  * - 将搜索分页逻辑和缓存控制从后端迁移到前端，参考海绵小站插件设计。
  * - 新增前端 searchCache，减少对后端的重复请求，显著降低后端压力。
+ * 
+ * 【⭐ 新增功能】
+ * - 统一 115 域名：将 115cdn.com 转换为 115.com。
+ * - 清理尾部特殊符号：移除链接末尾所有非字母数字的特殊符号。
+ * 
+ * 【✅ 优化】
+ * - 确保链接清理逻辑仅应用于包含 "115" 关键字的链接。
  */
 
 // ================== 🔴 配置区 🔴 ==================
@@ -73,7 +80,7 @@ async function getTracks(ext) {
         const vod_name = $('div.main-ui-meta h1').text().replace(/\(\d+\)$/, '').trim();
         const tracks = [];
 
-        // ========= ① 网盘下载逻辑（保持不动，只去掉强制 return） =========
+        // ========= ① 网盘下载逻辑（已修改，新增链接清理） =========
         const panDownloadArea = $('h2:contains("网盘下载")').parent();
         if (panDownloadArea.length > 0) {
             const panTypes = [];
@@ -83,8 +90,20 @@ async function getTracks(ext) {
                 const groupTracks = [];
                 $(ul).find('li.down-list2').each((_, li) => {
                     const $a = $(li).find('p.down-list3 a');
-                    const linkUrl = $a.attr('href');
+                    const originalLinkUrl = $a.attr('href');
                     const originalTitle = $a.attr('title') || $a.text();
+                    
+                    let linkUrl = originalLinkUrl;
+
+                    // --- 【⭐ 115网盘专属链接清理逻辑】 ---
+                    if (linkUrl && linkUrl.includes('115')) {
+                        // 第一步：将 115cdn.com 转换成 115.com
+                        linkUrl = linkUrl.replace('115cdn.com', '115.com');
+                        // 第二步：移除尾部所有非字母和非数字的特殊符号
+                        linkUrl = linkUrl.replace(/[^a-zA-Z0-9]+$/, '');
+                    }
+                    // --- 【清理逻辑结束】 ---
+
                     let spec = '';
                     const specMatch = originalTitle.match(/(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|[\d\.]+G[B]?)/ig);
                     if (specMatch) spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
@@ -92,7 +111,8 @@ async function getTracks(ext) {
                     let pwd = '';
                     const pwdMatch = linkUrl.match(/pwd=(\w+)/) || originalTitle.match(/(?:提取码|访问码)[：: ]\s*(\w+)/i);
                     if (pwdMatch) pwd = pwdMatch[1];
-                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } });
+                    
+                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } }); // 使用清理后的 linkUrl
                 });
                 if (groupTracks.length > 0) tracks.push({ title: panType, tracks: groupTracks });
             });
