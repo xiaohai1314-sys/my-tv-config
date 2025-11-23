@@ -1,7 +1,7 @@
 /**
  * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.3 (前端分页优化版)
  *
- * 基于 v11.3 修改：
+ * 基于 v11.30 修改：
  * - 将搜索分页逻辑和缓存控制从后端迁移到前端，参考海绵小站插件设计。
  * - 新增前端 searchCache，减少对后端的重复请求，显著降低后端压力。
  * 
@@ -111,10 +111,16 @@ async function getTracks(ext) {
                     cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
                     
                     let spec = '';
-                    // ★★★★★★ 唯一修改行：超级防 .g 正则 ★★★★★★
-                    const specMatch = cleanedTitle.match(/(4K|2160p|1080p|720p|HDR10\+?|DV|杜比视界|REMUX|原盘|高码|内封|简[繁英]?中|国粤双语|双语|合集|[\[\(【] ?([\d\.]+ ?[GM]B?) ?[\]\)】]|[\d\.]+ ?[GM]B?)/ig);
+                    // ★★★★★★ 永别 .g / 1.GB 的终极正则 ★★★★★★
+                    const specMatch = cleanedTitle.match(/(4K|2160p|1080p|720p|HDR10\+?|Dolby Vision|DV|杜比视界|REMUX|原盘|高码率?|内封|简[繁英]?中|国粤双语|双语|合集|\d+\.?\d*\s?[GM]B?|\[[^\]]*\d+\.?\d*\s?[GM]B?[^\]]*\]|\([^\)]*\d+\.?\d*\s?[GM]B?[^\)]*\))/ig);
                     if (specMatch) {
-                        spec = [...new Set(specMatch.map(s => s.toUpperCase().replace(/G$/, 'GB')))].join(' ').replace(/\s+/g, ' ');
+                        spec = [...new Set(specMatch.map(s => s.toUpperCase()
+                            .replace(/[^\w]/g, ' ')   // 把所有括号、特殊符号换空格
+                            .replace(/\./g, '')       // 彻底干掉点号
+                            .replace(/G$/g, 'GB')
+                            .replace(/M$/g, 'MB')
+                            .trim()
+                        ))].join(' ').replace(/\s+/g, ' ');
                     }
                     
                     const trackName = spec 
@@ -192,7 +198,7 @@ async function getPlayinfo(ext) {
 }
 
 // ================== 搜索逻辑 (★ MODIFIED ★ - 移植海绵小站模式) ==================
-const searchCache = {};
+const searchCache = {}; // ★ NEW ★: 新增前端搜索缓存对象
 
 async function search(ext) {
     ext = argsify(ext);
@@ -204,6 +210,7 @@ async function search(ext) {
         return jsonify({ list: [], page: 1, pagecount: 1 });
     }
 
+    // ★ NEW ★: 切换关键词时，重置缓存
     if (searchCache.keyword !== keyword) {
         log(`新关键词 "${keyword}"，重置缓存。`);
         searchCache.keyword = keyword;
@@ -211,6 +218,7 @@ async function search(ext) {
         searchCache.pagecount = 0;
     }
 
+    // ★ NEW ★: 命中页缓存，直接返回
     if (searchCache.data && searchCache.data[page - 1]) {
         log(`命中缓存: "${keyword}" 第 ${page} 页。`);
         return jsonify({
@@ -220,6 +228,7 @@ async function search(ext) {
         });
     }
 
+    // ★ NEW ★: 页码越界保护，防止无效的后端请求
     if (searchCache.pagecount > 0 && page > searchCache.pagecount) {
         log(`请求页码 ${page} 超出总页数 ${searchCache.pagecount}，返回空列表。`);
         return jsonify({ list: [], page: page, pagecount: searchCache.pagecount });
@@ -265,10 +274,11 @@ async function search(ext) {
         
         log(`成功从后端获取并解析到 ${cards.length} 条数据。`);
 
+        // ★ NEW ★: 更新缓存
         if (!searchCache.data) searchCache.data = [];
-        searchCache.data[page - 1] = cards;
+        searchCache.data[page - 1] = cards; // 缓存当前页数据
         if (paginationInfo.totalPages > 0) {
-            searchCache.pagecount = paginationInfo.totalPages;
+            searchCache.pagecount = paginationInfo.totalPages; // 更新总页数
         }
         
         log(`缓存更新: "${keyword}" 第 ${page} 页数据已存入。当前已知总页数: ${searchCache.pagecount}`);
@@ -276,12 +286,13 @@ async function search(ext) {
         return jsonify({
             list: cards,
             page: page,
-            pagecount: searchCache.pagecount
+            pagecount: searchCache.pagecount // ★ MODIFIED ★: 使用缓存中的总页数
         });
 
     } catch (e) {
         log(`❌ 搜索异常: ${e.message}`);
         $toast(`搜索失败: ${e.message}`);
+        // ★ MODIFIED ★: 失败时也返回正确的缓存页数，防止UI错乱
         return jsonify({ list: [], page: page, pagecount: searchCache.pagecount || page });
     }
 }
