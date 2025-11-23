@@ -1,17 +1,19 @@
 /**
  * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.3 (前端分页优化版)
  *
- * 基于 v11.13 修改：
+ * 基于 v11.3 修改：
  * - 将搜索分页逻辑和缓存控制从后端迁移到前端，参考海绵小站插件设计。
  * - 新增前端 searchCache，减少对后端的重复请求，显著降低后端压力。
- * * 【⭐ 新增功能】
+ * 
+ * 【⭐ 新增功能】
  * - 统一 115 域名：将 115cdn.com 转换为 115.com。
  * - 清理尾部特殊符号：移除链接末尾所有非字母数字的特殊符号。
- * * 【✅ 优化】
+ * 
+ * 【✅ 优化】
  * - 确保链接清理逻辑仅应用于包含 "115" 关键字的链接。
  * - 优化网盘命名逻辑为最简化模式：帖子名 + 规格关键词（如果有），否则仅帖子名。
- * - 【✅ 修正】：修复规格正则，避免误匹配如 ".Gate" 中的 ".G" (g)
- * - 【✅ 修正】：修复天翼网盘提取码格式为用户要求的中文格式：链接（访问码：xxxx）
+ * - 修复规格匹配bug，防止出现 .g 等错误匹配。
+ * - 只对天翼网盘添加访问码拼接格式。
  */
 
 // ================== 🔴 配置区 🔴 ==================
@@ -33,7 +35,7 @@ const appConfig = {
 };
 
 // ================== 辅助函数 ==================
-function log(msg  ) { try { $log(`[七味网 v11.0] ${msg}`); } catch (_) { console.log(`[七味网 v11.0] ${msg}`); } }
+function log(msg) { try { $log(`[七味网 v11.0] ${msg}`); } catch (_) { console.log(`[七味网 v11.0] ${msg}`); } }
 function argsify(ext) { if (typeof ext === 'string') { try { return JSON.parse(ext); } catch (e) { return {}; } } return ext || {}; }
 function jsonify(data) { return JSON.stringify(data); }
 async function fetchOriginalSite(url) {
@@ -115,11 +117,8 @@ async function getTracks(ext) {
                     cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
                     
                     let spec = '';
-                    // 3. 使用清理后的文件名进行规格匹配
-                    // 【✅ 修正规格正则：避免误匹配 ".G"】
-                    const specRegex = /(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|\b\d+(\.\d+)?\s*GB?\b)/ig;
-                    
-                    const specMatch = cleanedTitle.match(specRegex);
+                    // 🔧 修复：严格匹配规格，防止 .g 这样的错误匹配
+                    const specMatch = cleanedTitle.match(/(\d{3,4}p|4K|2160p|1080p|720p|HDR|DV|杜比|高码|内封|特效|字幕|\d+\.\d+GB?|\d+GB?)/ig);
                     if (specMatch) {
                         spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
                     }
@@ -130,12 +129,18 @@ async function getTracks(ext) {
                         : vod_name; // 简化为仅帖子名
                     // --- 【命名逻辑结束】 ---
                     
+                    // 🔧 修复：提取访问码
                     let pwd = '';
                     const pwdMatch = linkUrl.match(/pwd=(\w+)/) || originalTitle.match(/(?:提取码|访问码)[：: ]\s*(\w+)/i);
                     if (pwdMatch) pwd = pwdMatch[1];
                     
-                    // 【✅ 修正：在 ext 中加入 panType，以便 getPlayinfo 格式化提取码】
-                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd, panType: panType } });
+                    // 🔧 修复：只对天翼网盘添加访问码拼接
+                    let finalLink = linkUrl;
+                    if (pwd && (linkUrl.includes('cloud.189.cn') || linkUrl.includes('天翼'))) {
+                        finalLink = `${linkUrl}（访问码：${pwd}）`;
+                    }
+                    
+                    groupTracks.push({ name: trackName, pan: finalLink, ext: { pwd: pwd } }); // 使用清理后的 linkUrl
                 });
                 if (groupTracks.length > 0) tracks.push({ title: panType, tracks: groupTracks });
             });
@@ -182,22 +187,7 @@ async function getPlayinfo(ext) {
     // 原网盘逻辑
     if (!ext.play) {
         const panLink = ext.pan;
-        const password = ext.pwd;
-        const panType = ext.panType; // 【✅ 获取 panType】
-
-        let finalUrl = panLink;
-        
-        if (password) {
-            // 【✅ 修正提取码格式】
-            if (panType && panType.includes('天翼')) { 
-                // 用户要求的天翼网盘中文格式：(访问码：xxxx)
-                finalUrl += `（访问码：${password}）`; 
-            } else {
-                // 默认的提取码格式
-                finalUrl += `\n提取码: ${password}`;
-            }
-        }
-        return jsonify({ urls: [finalUrl] });
+        return jsonify({ urls: [panLink] });
     }
 
     // 新增：在线播放逻辑
