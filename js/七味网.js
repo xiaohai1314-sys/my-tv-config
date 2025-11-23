@@ -1,7 +1,7 @@
 /**
  * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.3 (前端分页优化版)
  *
- * 基于 v11.3 修改：
+ * 基于 v11.23 修改：
  * - 将搜索分页逻辑和缓存控制从后端迁移到前端，参考海绵小站插件设计。
  * - 新增前端 searchCache，减少对后端的重复请求，显著降低后端压力。
  * 
@@ -94,20 +94,40 @@ async function getTracks(ext) {
                 const panType = panTypes[index] || '未知网盘';
                 const groupTracks = [];
                 $(ul).find('li.down-list2').each((_, li) => {
-                    const $a = $(li).find('p.down-list3 a');
-                    const originalLinkUrl = $a.attr('href');
-                    const originalTitle = $a.attr('title') || $a.text();
-                    
-                    let linkUrl = originalLinkUrl;
+                    const $block = $(li).find('p.down-list3');
+                    let $a = $block.find('a[href]').first();
+                    if (!$a || !$a.attr('href')) {
+                        $a = $(li).find('a[href*="cloud.189.cn"]').first();
+                        if (!$a || !$a.attr('href')) {
+                            $a = $(li).find('a:contains("天翼")').first();
+                        }
+                    }
+                    const originalTitle = ($a && ($a.attr('title') || $a.text())) || $block.text().trim();
+                    let linkUrl = $a && $a.attr('href');
 
-                    // --- 【⭐ 115网盘专属链接清理逻辑】 ---
+                    if (!linkUrl) {
+                        const oc = [$(li).attr('onclick') || '', $block.attr('onclick') || ''].join(' ');
+                        const durl = $(li).attr('data-url') || $(li).attr('data-href') || '';
+                        linkUrl = (oc.match(/https?:\/\/[^\s'"）)]+/i) || [])[0] || durl;
+                        if (!linkUrl) {
+                            const text = $block.text();
+                            linkUrl = (text.match(/https?:\/\/[^\s'"）)]+/i) || [])[0] || (text.match(/\/\/cloud\.189\.cn[^\s'"）)]+/i) || [])[0];
+                        }
+                    }
+
+                    if (linkUrl && linkUrl.startsWith('//')) linkUrl = 'https:' + linkUrl;
+                    if (linkUrl && !/^https?:\/\//i.test(linkUrl)) {
+                        try { linkUrl = new URL(linkUrl, appConfig.site).toString(); } catch (_) {}
+                    }
+
                     if (linkUrl && linkUrl.includes('115')) {
-                        // 第一步：将 115cdn.com 转换成 115.com
                         linkUrl = linkUrl.replace('115cdn.com', '115.com');
-                        // 第二步：移除尾部所有非字母和非数字的特殊符号
                         linkUrl = linkUrl.replace(/[^a-zA-Z0-9]+$/, '');
                     }
-                    // --- 【清理逻辑结束】 ---
+                    if (linkUrl && linkUrl.includes('cloud.189.cn')) {
+                        const m = linkUrl.match(/cloud\.189\.cn\/web\/share\?code=([A-Za-z0-9]+)/i);
+                        if (m) linkUrl = `https://cloud.189.cn/t/${m[1]}`;
+                    }
 
                     // --- 【⭐ 简化命名逻辑】 ---
                     // 1. 移除文件名中常见的非规格括号信息，例如 (《...》【...】提...)
@@ -131,16 +151,16 @@ async function getTracks(ext) {
                     
                     // 🔧 修复：提取访问码
                     let pwd = '';
-                    const pwdMatch = linkUrl.match(/pwd=(\w+)/) || originalTitle.match(/(?:提取码|访问码)[：: ]\s*(\w+)/i);
+                    const pwdMatch = (linkUrl && linkUrl.match(/[?&](?:pwd|pass|code)=([A-Za-z0-9_-]+)/i)) || originalTitle.match(/(?:提取码|访问码|密码|码)[：:\s]*([A-Za-z0-9_-]{4,10})/i);
                     if (pwdMatch) pwd = pwdMatch[1];
                     
                     // 🔧 修复：只对天翼网盘添加访问码拼接
-                    let finalLink = linkUrl;
-                    if (pwd && (linkUrl.includes('cloud.189.cn') || linkUrl.includes('天翼'))) {
-                        finalLink = `${linkUrl}（访问码：${pwd}）`;
+                    let finalLink = linkUrl || '';
+                    if (pwd && (finalLink.includes('cloud.189.cn') || originalTitle.includes('天翼'))) {
+                        finalLink = `${finalLink}（访问码：${pwd}）`;
                     }
-                    
-                    groupTracks.push({ name: trackName, pan: finalLink, ext: { pwd: pwd } }); // 使用清理后的 linkUrl
+
+                    groupTracks.push({ name: trackName, pan: finalLink, ext: { pwd: pwd } });
                 });
                 if (groupTracks.length > 0) tracks.push({ title: panType, tracks: groupTracks });
             });
