@@ -1,7 +1,7 @@
 /**
  * 七味网(qwmkv.com) - 网盘+在线播放提取脚本 - v11.3 (前端分页优化版)
  *
- * 基于 v11.30 修改：
+ * 基于 v11.3 修改：
  * - 将搜索分页逻辑和缓存控制从后端迁移到前端，参考海绵小站插件设计。
  * - 新增前端 searchCache，减少对后端的重复请求，显著降低后端压力。
  * 
@@ -100,39 +100,38 @@ async function getTracks(ext) {
 
                     // --- 【⭐ 115网盘专属链接清理逻辑】 ---
                     if (linkUrl && linkUrl.includes('115')) {
+                        // 第一步：将 115cdn.com 转换成 115.com
                         linkUrl = linkUrl.replace('115cdn.com', '115.com');
+                        // 第二步：移除尾部所有非字母和非数字的特殊符号
                         linkUrl = linkUrl.replace(/[^a-zA-Z0-9]+$/, '');
                     }
                     // --- 【清理逻辑结束】 ---
 
                     // --- 【⭐ 简化命名逻辑】 ---
+                    // 1. 移除文件名中常见的非规格括号信息，例如 (《...》【...】提...)
                     let cleanedTitle = originalTitle;
                     cleanedTitle = cleanedTitle.replace(/\(《[^》]+》【[^】]+】提\.\.\.\)/, '').trim();
+                    // 2. 移除末尾的 [115] 或其他网盘标识
                     cleanedTitle = cleanedTitle.replace(/\[\w+\]$/, '').trim();
                     
                     let spec = '';
-                    // ★★★★★★ 永别 .g / 1.GB 的终极正则 ★★★★★★
-                    const specMatch = cleanedTitle.match(/(4K|2160p|1080p|720p|HDR10\+?|Dolby Vision|DV|杜比视界|REMUX|原盘|高码率?|内封|简[繁英]?中|国粤双语|双语|合集|\d+\.?\d*\s?[GM]B?|\[[^\]]*\d+\.?\d*\s?[GM]B?[^\]]*\]|\([^\)]*\d+\.?\d*\s?[GM]B?[^\)]*\))/ig);
+                    // 3. 使用清理后的文件名进行规格匹配
+                    const specMatch = cleanedTitle.match(/(\d{4}p|4K|2160p|1080p|HDR|DV|杜比|高码|内封|特效|字幕|\b\d+(\.\d+)?\s*GB?\b)/ig);
                     if (specMatch) {
-                        spec = [...new Set(specMatch.map(s => s.toUpperCase()
-                            .replace(/[^\w]/g, ' ')   // 把所有括号、特殊符号换空格
-                            .replace(/\./g, '')       // 彻底干掉点号
-                            .replace(/G$/g, 'GB')
-                            .replace(/M$/g, 'MB')
-                            .trim()
-                        ))].join(' ').replace(/\s+/g, ' ');
+                        spec = [...new Set(specMatch.map(s => s.toUpperCase()))].join(' ').replace(/\s+/g, ' ');
                     }
                     
+                    // 4. 构造最终名称：帖子名 + 规格关键词（如果有），否则仅帖子名
                     const trackName = spec 
                         ? `${vod_name} [${spec}]` 
-                        : vod_name;
+                        : vod_name; // 简化为仅帖子名
                     // --- 【命名逻辑结束】 ---
                     
                     let pwd = '';
                     const pwdMatch = linkUrl.match(/pwd=(\w+)/) || originalTitle.match(/(?:提取码|访问码)[：: ]\s*(\w+)/i);
                     if (pwdMatch) pwd = pwdMatch[1];
                     
-                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } });
+                    groupTracks.push({ name: trackName, pan: linkUrl, ext: { pwd: pwd } }); // 使用清理后的 linkUrl
                 });
                 if (groupTracks.length > 0) tracks.push({ title: panType, tracks: groupTracks });
             });
@@ -141,9 +140,10 @@ async function getTracks(ext) {
         // ========= ② 修复后：在线播放分组 =========
         const onlineSection = $('#url .sBox');
         if (onlineSection.length > 0) {
+            // 获取所有播放源标签名
             const tabNames = [];
             onlineSection.find('.py-tabs li').each((_, tab) => {
-                const tabText = $(tab).text().trim().split('\n')[0];
+                const tabText = $(tab).text().trim().split('\n')[0]; // 去掉数字部分
                 tabNames.push(tabText);
             });
             
@@ -175,6 +175,7 @@ async function getTracks(ext) {
 async function getPlayinfo(ext) {
     ext = argsify(ext);
 
+    // 原网盘逻辑
     if (!ext.play) {
         const panLink = ext.pan;
         const password = ext.pwd;
@@ -183,6 +184,7 @@ async function getPlayinfo(ext) {
         return jsonify({ urls: [finalUrl] });
     }
 
+    // 新增：在线播放逻辑
     const playPageUrl = `${appConfig.site}${ext.pan}`;
     try {
         const fetchResult = await fetchOriginalSite(playPageUrl);
